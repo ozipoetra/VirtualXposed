@@ -39,6 +39,30 @@ jobs:
         with:
           cache-read-only: ${{ github.event_name == 'pull_request' }}
 
+      # Release signing for the aosp flavor. The build script
+      # reads keystore.* from VirtualApp/local.properties and only
+      # signs when the keystore file exists, so when the secrets
+      # aren't available (e.g. fork PRs) the build stays unsigned
+      # instead of failing.
+      - name: Restore release signing key
+        env:
+          ANDROID_KEY_BASE64: ${{ secrets.ANDROID_KEY_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$ANDROID_KEY_BASE64" ]; then
+            echo "$ANDROID_KEY_BASE64" | base64 -d > "$RUNNER_TEMP/virtualxposed-release.jks"
+            cat > VirtualApp/local.properties <<EOF
+          keystore.path=$RUNNER_TEMP/virtualxposed-release.jks
+          keystore.alias=$ANDROID_KEY_ALIAS
+          keystore.pwd=$ANDROID_KEY_PASSWORD
+          keystore.alias_pwd=$ANDROID_KEY_PASSWORD
+          EOF
+            echo "Signing key restored; the aosp APK will be signed."
+          else
+            echo "No signing secrets available; building unsigned."
+          fi
+
       - name: Build release APKs
         working-directory: VirtualApp
         run: ./gradlew assembleRelease --stacktrace
