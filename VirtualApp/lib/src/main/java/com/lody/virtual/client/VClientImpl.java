@@ -232,6 +232,43 @@ public final class VClientImpl extends IVClient.Stub {
         }
     }
 
+    /**
+     * Since Android 14, ART refuses to load dex from a file
+     * the process can write ("Writable dex file ... is not
+     * allowed") — the dynamic-code-loading hardening. A
+     * guest's APKs live in the container's private data, so
+     * they are writable, and every guest bind died in
+     * LoadedApk classloader creation. Mark the base APK and
+     * all splits read-only before anything loads them. The
+     * engine deletes the whole app directory before copying
+     * fresh files on reinstall, so this never blocks an
+     * update.
+     */
+    private static void makeGuestDexesReadOnly(InstalledAppInfo info) {
+        if (info == null || info.dependSystem) {
+            // dependSystem guests load the host's APKs from
+            // /data/app, which are already read-only.
+            return;
+        }
+        chmodReadOnly(info.apkPath);
+        if (info.splitCodePaths != null) {
+            for (String splitPath : info.splitCodePaths) {
+                chmodReadOnly(splitPath);
+            }
+        }
+    }
+
+    private static void chmodReadOnly(String path) {
+        if (path == null) {
+            return;
+        }
+        try {
+            Os.chmod(path, 0444);
+        } catch (Throwable e) {
+            VLog.w(TAG, "makeGuestDexesReadOnly: chmod failed for " + path + ": " + e);
+        }
+    }
+
     private void bindApplicationNoCheck(String packageName, String processName, ConditionVariable lock) {
         VDeviceInfo deviceInfo = getDeviceInfo();
         if (processName == null) {
@@ -261,6 +298,7 @@ public final class VClientImpl extends IVClient.Stub {
             Process.killProcess(0);
             System.exit(0);
         }
+        makeGuestDexesReadOnly(info);
         data.appInfo = VPackageManager.get().getApplicationInfo(packageName, 0, getUserId(vuid));
         data.processName = processName;
         data.appInfo.processName = processName;
