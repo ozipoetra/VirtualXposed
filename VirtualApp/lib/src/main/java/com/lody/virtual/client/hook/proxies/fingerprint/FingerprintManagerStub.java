@@ -16,7 +16,9 @@ import mirror.android.hardware.fingerprint.IFingerprintService;
 @TargetApi(Build.VERSION_CODES.M)
 public class FingerprintManagerStub extends BinderInvocationProxy {
     public FingerprintManagerStub() {
-        super(IFingerprintService.Stub.asInterface, Context.FINGERPRINT_SERVICE);
+        // Context.FINGERPRINT_SERVICE was removed from the public
+        // SDK; the service name it stood for is "fingerprint".
+        super(IFingerprintService.Stub.asInterface, "fingerprint");
     }
 
     @Override
