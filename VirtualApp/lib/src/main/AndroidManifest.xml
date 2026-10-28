@@ -12,6 +12,13 @@
          android.permission.FOREGROUND_SERVICE'. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
+    <!-- The type-specific companion for the specialUse type
+         declared on DaemonService below: targetSdk 34+ refuses
+         to start a specialUse FGS without it ('Starting FGS
+         with type specialUse ... requires permissions:
+         [android.permission.FOREGROUND_SERVICE_SPECIAL_USE]'). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+
     <uses-permission android:name="com.samsung.svoice.sync.READ_DATABASE" />
     <uses-permission android:name="com.samsung.svoice.sync.ACCESS_SERVICE" />
     <uses-permission android:name="com.samsung.svoice.sync.WRITE_DATABASE" />
