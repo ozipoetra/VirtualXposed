@@ -97,15 +97,11 @@ public class PackageParserEx {
             // top-level android.content.pm.SigningDetails, not
             // PackageParser's nested one (the nested-param lookup
             // above resolves to null there). Convert the way the
-            // framework's own generatePackageInfo does.
-            new IllegalStateException("buildSigningInfo resolution:"
-                    + " platformCtor=" + (mirror.android.content.pm.SigningDetails.ctor != null)
-                    + " ctorModern=" + (mirror.android.content.pm.PackageParser.SigningInfo.ctorModern != null)
-                    + " signatures=" + (mirror.android.content.pm.PackageParser.SigningDetails.signatures != null)
-                    + " schemeVersion=" + (mirror.android.content.pm.PackageParser.SigningDetails.signatureSchemeVersion != null)
-                    + " publicKeys=" + (mirror.android.content.pm.PackageParser.SigningDetails.publicKeys != null)
-                    + " pastCerts=" + (mirror.android.content.pm.PackageParser.SigningDetails.pastSigningCertificates != null))
-                    .printStackTrace();
+            // framework's own generatePackageInfo does. (All six
+            // mirrors used below were verified resolving on
+            // Android 16 / HyperOS by a temporary diagnostic —
+            // platformCtor, ctorModern and the four fields all
+            // resolved true on device.)
             Signature[] signatures = mirror.android.content.pm.PackageParser.SigningDetails.signatures.get(signingDetails);
             int schemeVersion = mirror.android.content.pm.PackageParser.SigningDetails.signatureSchemeVersion.get(signingDetails);
             Object publicKeys = mirror.android.content.pm.PackageParser.SigningDetails.publicKeys.get(signingDetails);
