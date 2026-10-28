@@ -88,6 +88,39 @@ public class PackageParserEx {
         }
     }
 
+    private static SigningInfo buildSigningInfo(Object signingDetails) {
+        try {
+            if (mirror.android.content.pm.PackageParser.SigningInfo.ctor != null) {
+                return mirror.android.content.pm.PackageParser.SigningInfo.ctor.newInstance(signingDetails);
+            }
+            // Android 14+: SigningInfo's constructor takes the
+            // top-level android.content.pm.SigningDetails, not
+            // PackageParser's nested one (the nested-param lookup
+            // above resolves to null there). Convert the way the
+            // framework's own generatePackageInfo does.
+            new IllegalStateException("buildSigningInfo resolution:"
+                    + " platformCtor=" + (mirror.android.content.pm.SigningDetails.ctor != null)
+                    + " ctorModern=" + (mirror.android.content.pm.PackageParser.SigningInfo.ctorModern != null)
+                    + " signatures=" + (mirror.android.content.pm.PackageParser.SigningDetails.signatures != null)
+                    + " schemeVersion=" + (mirror.android.content.pm.PackageParser.SigningDetails.signatureSchemeVersion != null)
+                    + " publicKeys=" + (mirror.android.content.pm.PackageParser.SigningDetails.publicKeys != null)
+                    + " pastCerts=" + (mirror.android.content.pm.PackageParser.SigningDetails.pastSigningCertificates != null))
+                    .printStackTrace();
+            Signature[] signatures = mirror.android.content.pm.PackageParser.SigningDetails.signatures.get(signingDetails);
+            int schemeVersion = mirror.android.content.pm.PackageParser.SigningDetails.signatureSchemeVersion.get(signingDetails);
+            Object publicKeys = mirror.android.content.pm.PackageParser.SigningDetails.publicKeys.get(signingDetails);
+            Signature[] pastCertificates = mirror.android.content.pm.PackageParser.SigningDetails.pastSigningCertificates.get(signingDetails);
+            Object platformDetails = mirror.android.content.pm.SigningDetails.ctor.newInstance(
+                    signatures, schemeVersion, publicKeys, pastCertificates);
+            return mirror.android.content.pm.PackageParser.SigningInfo.ctorModern.newInstance(platformDetails);
+        } catch (Throwable e) {
+            // Signing info is served data, not install-critical:
+            // never let its construction kill the install.
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public static VPackage readPackageCache(String packageName) {
         Parcel p = Parcel.obtain();
         try {
@@ -221,7 +254,7 @@ public class PackageParserEx {
                     System.arraycopy(signatures, 0, cache.mSignatures, 0, numberOfSigs);
                 }
             }
-            cache.signingInfo = mirror.android.content.pm.PackageParser.SigningInfo.ctor.newInstance(signingDetails);
+            cache.signingInfo = buildSigningInfo(signingDetails);
         }
         cache.mAppMetaData = p.mAppMetaData;
         cache.packageName = p.packageName;
