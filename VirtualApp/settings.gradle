@@ -1,2 +1,19 @@
+// Plugin versions are pinned here so module build files can apply
+// them without repeating the version. AGP 9.4 is the current
+// stable line and the first one with full API 37 (Android 17)
+// support.
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    plugins {
+        id 'com.android.application' version '9.4.0'
+        id 'com.android.library' version '9.4.0'
+        id 'com.google.protobuf' version '0.9.6'
+    }
+}
+
 include ':lib', ':app', ':launcher'
-rootProject.name="VirtualXposed"
+rootProject.name = "VirtualXposed"

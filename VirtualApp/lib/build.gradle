@@ -1,41 +1,43 @@
-apply plugin: 'com.android.library'
+plugins {
+    id 'com.android.library'
+}
 
 android {
-    compileSdkVersion 28
-    buildToolsVersion '28.0.3'
+    namespace = 'com.lody.virtual'
+    compileSdk = 37
 
     defaultConfig {
-        minSdkVersion 21
-        targetSdkVersion 22
-        versionCode 1
-        versionName "1.0"
+        minSdk = 21
         externalNativeBuild {
             ndkBuild {
-                abiFilters "arm64-v8a", "x86_64"
+                abiFilters += ["arm64-v8a", "x86_64"]
             }
         }
     }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled = false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
     externalNativeBuild {
         ndkBuild {
-            path file("src/main/jni/Android.mk")
+            path = file("src/main/jni/Android.mk")
         }
     }
-    lintOptions {
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+    lint {
         //IJobService need NewApi
-        warning 'NewApi','OnClick'
-        checkReleaseBuilds false
+        warning 'NewApi', 'OnClick'
+        checkReleaseBuilds = false
         // Or, if you prefer, you can continue to check for errors in release builds,
         // but continue the build even when errors are found:
-        abortOnError false
+        abortOnError = false
     }
 }
-
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
@@ -47,8 +49,4 @@ dependencies {
     implementation "me.weishu:free_reflection:3.0.1"
     implementation "me.weishu:epic:0.11.1"
     implementation "me.weishu.exposed:exposed-xposedapi:0.4.6"
-}
-
-repositories {
-    maven { url 'https://jitpack.io' }
 }

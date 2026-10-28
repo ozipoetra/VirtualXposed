@@ -1,4 +1,6 @@
-apply plugin: 'com.android.application'
+plugins {
+    id 'com.android.application'
+}
 
 Properties properties = new Properties()
 def localProp = file(project.rootProject.file('local.properties'))
@@ -8,45 +10,49 @@ if (localProp.exists()) {
 def keyFile = file(properties.getProperty("keystore.path") ?: "/tmp/does_not_exist")
 
 android {
+    // The sources live in the io.virtualapp package; the
+    // applicationId below is what Android sees as the app.
+    namespace = 'io.virtualapp'
+    compileSdk = 37
+
     signingConfigs {
         config {
-            keyAlias properties.getProperty("keystore.alias")
-            keyPassword properties.getProperty("keystore.pwd")
-            storeFile keyFile
-            storePassword properties.getProperty("keystore.alias_pwd")
+            keyAlias = properties.getProperty("keystore.alias")
+            keyPassword = properties.getProperty("keystore.pwd")
+            storeFile = keyFile
+            storePassword = properties.getProperty("keystore.alias_pwd")
         }
     }
 
-    compileSdkVersion 28
-    buildToolsVersion '28.0.3'
     defaultConfig {
-        applicationId "io.va.exposed64"
-        minSdkVersion 21
-        targetSdkVersion 23
-        versionCode 220
-        versionName "0.22.0"
-        multiDexEnabled false
-        android {
-            defaultConfig {
-                ndk {
-                    abiFilters "arm64-v8a", "x86_64"
-                }
-            }
+        applicationId = "io.va.exposed64"
+        minSdk = 21
+        // Android 17 (API 37); the same build covers Android 16
+        // (API 36) behavior changes, which are a subset.
+        targetSdk = 37
+        versionCode = 220
+        versionName = "0.22.0"
+        multiDexEnabled = false
+        ndk {
+            abiFilters += ["arm64-v8a", "x86_64"]
         }
     }
-    // https://developer.android.com/studio/build/gradle-plugin-3-0-0-migration.html?utm_source=android-studio
-    flavorDimensions 'main'
+    flavorDimensions += ['main']
     productFlavors {
         aosp {
-            dimension 'main'
-            //matchingFallbacks ['aosp']
+            dimension = 'main'
+            // The :launcher library publishes its flavors in its
+            // own 'lib' dimension; match its aosp variant.
+            matchingFallbacks += ['aosp']
             if (keyFile.exists()) {
-                signingConfig signingConfigs.config
+                signingConfig = signingConfigs.config
             }
         }
 
         fdroid {
-            dimension 'main'
+            dimension = 'main'
+            // No fdroid launcher variant exists; reuse aosp.
+            matchingFallbacks += ['aosp']
         }
     }
     sourceSets {
@@ -56,19 +62,24 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
-            debuggable false
+            minifyEnabled = false
+            debuggable = false
         }
     }
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+    buildFeatures {
+        // CmdReceiver reads BuildConfig.APPLICATION_ID; AGP 8+
+        // no longer generates BuildConfig unless asked.
+        buildConfig = true
     }
-    lintOptions {
-        checkReleaseBuilds false
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+    lint {
+        checkReleaseBuilds = false
         // Or, if you prefer, you can continue to check for errors in release builds,
         // but continue the build even when errors are found:
-        abortOnError false
+        abortOnError = false
     }
 }
 
