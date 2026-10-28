@@ -26,11 +26,15 @@ import android.os.IBinder;
 import android.os.Parcelable;
 import android.util.MergedConfiguration;
 import android.view.DisplayAdjustments;
+import android.view.SurfaceControl;
+import android.window.ActivityWindowInfo;
+import android.window.SplashScreenView.SplashScreenViewParcelable;
+import android.window.WindowContextInfo;
+
+import com.android.internal.content.ReferrerIntent;
 
 import java.util.List;
 import java.util.Map;
-
-import mirror.com.android.internal.content.ReferrerIntent;
 
 /**
  * Defines operations that a {@link ClientTransaction} or its items
@@ -266,4 +270,78 @@ public abstract class ClientTransactionHandler {
 
     /** Deliver new intent. */
     public abstract void handleNewIntent(IBinder token, List intents);
+
+    // ---------------------------------------------------------------------
+    // Android 16 abstract surface (verified against AOSP
+    // android-16.0.0_r1 ClientTransactionHandler). Several older
+    // record-based lifecycle methods changed shape here — the
+    // configChanges / extra-flag parameters moved — so these are
+    // distinct overloads, not replacements for the ones above.
+    // ---------------------------------------------------------------------
+
+    /** Destroy the activity (Android 16 shape: no configChanges). */
+    public abstract void handleDestroyActivity(ActivityThread.ActivityClientRecord r, boolean finishing,
+                                               boolean getNonConfigInstance, String reason);
+
+    /** Pause the activity (Android 16 shape: adds autoEnteringPip). */
+    public abstract void handlePauseActivity(ActivityThread.ActivityClientRecord r, boolean finished,
+                                             boolean userLeaving, boolean autoEnteringPip,
+                                             PendingTransactionActions pendingActions, String reason);
+
+    /** Resume the activity (Android 16 shape: adds shouldSendCompatFakeFocus). */
+    public abstract void handleResumeActivity(ActivityThread.ActivityClientRecord r,
+                                              boolean finalStateRequest, boolean isForward,
+                                              boolean shouldSendCompatFakeFocus, String reason);
+
+    /** Stop the activity (Android 16 shape: no configChanges). */
+    public abstract void handleStopActivity(ActivityThread.ActivityClientRecord r,
+                                            PendingTransactionActions pendingActions,
+                                            boolean finalStateRequest, String reason);
+
+    /** Report that activity was refreshed to server. */
+    public abstract void reportRefresh(ActivityThread.ActivityClientRecord r);
+
+    /** Deliver activity configuration change (Android 16 shape: adds ActivityWindowInfo). */
+    public abstract void handleActivityConfigurationChanged(ActivityThread.ActivityClientRecord r,
+                                                            Configuration overrideConfig, int displayId,
+                                                            ActivityWindowInfo activityWindowInfo);
+
+    /** Deliver WindowContext info change. */
+    public abstract void handleWindowContextInfoChanged(IBinder clientToken, WindowContextInfo info);
+
+    /** Deliver WindowContext window removal. */
+    public abstract void handleWindowContextWindowRemoval(IBinder clientToken);
+
+    /** Signal PiP state changes (Android 16 shape: typed state, not Parcelable). */
+    public abstract void handlePictureInPictureStateChanged(ActivityThread.ActivityClientRecord r,
+                                                            PictureInPictureUiState pipState);
+
+    /** Attach a splash screen view (Android 16 shape: typed parcelable + leash). */
+    public abstract void handleAttachSplashScreenView(ActivityThread.ActivityClientRecord r,
+                                                      SplashScreenViewParcelable parcelable,
+                                                      SurfaceControl startingWindowLeash);
+
+    /** Perform activity launch (Android 16 shape: adds deviceId). */
+    public abstract Activity handleLaunchActivity(ActivityThread.ActivityClientRecord r,
+            PendingTransactionActions pendingActions, int deviceId, Intent customIntent);
+
+    /** Perform activity start (Android 16 shape: SceneTransitionInfo, not ActivityOptions). */
+    public abstract void handleStartActivity(ActivityThread.ActivityClientRecord r,
+                                             PendingTransactionActions pendingActions,
+                                             ActivityOptions.SceneTransitionInfo sceneTransitionInfo);
+
+    /** Get package info (Android 16 shape: no CompatibilityInfo). */
+    public abstract LoadedApk getPackageInfoNoCheck(ApplicationInfo ai);
+
+    /** Deliver app configuration change (Android 16 shape: adds deviceId). */
+    public abstract void handleConfigurationChanged(Configuration config, int deviceId);
+
+    /** Prepare activity relaunch (Android 16 shape: adds ActivityWindowInfo). */
+    public abstract ActivityThread.ActivityClientRecord prepareRelaunchActivity(IBinder token,
+            List pendingResults, List pendingNewIntents,
+            int configChanges, MergedConfiguration config, boolean preserveWindow,
+            ActivityWindowInfo activityWindowInfo);
+
+    /** Report that relaunch request was handled (Android 16 shape: record, not token). */
+    public abstract void reportRelaunch(ActivityThread.ActivityClientRecord r);
 }

@@ -6,4 +6,12 @@ package android.app;
  */
 
 class ActivityOptions {
+
+    /**
+     * Compile-time stub for the nested type that appears in
+     * ClientTransactionHandler.handleStartActivity signatures
+     * on Android 16.
+     */
+    public static class SceneTransitionInfo {
+    }
 }

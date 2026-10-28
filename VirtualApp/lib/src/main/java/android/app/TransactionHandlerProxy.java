@@ -14,7 +14,12 @@ import android.os.Parcelable;
 import android.util.Log;
 import android.util.MergedConfiguration;
 import android.view.DisplayAdjustments;
+import android.view.SurfaceControl;
+import android.window.ActivityWindowInfo;
+import android.window.SplashScreenView.SplashScreenViewParcelable;
+import android.window.WindowContextInfo;
 
+import com.android.internal.content.ReferrerIntent;
 import com.lody.virtual.client.VClientImpl;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VActivityManager;
@@ -27,7 +32,6 @@ import java.util.Map;
 
 import mirror.android.app.ActivityManagerNative;
 import mirror.android.app.IActivityManager;
-import mirror.com.android.internal.content.ReferrerIntent;
 
 
 /**
@@ -347,6 +351,137 @@ public class TransactionHandlerProxy extends ClientTransactionHandler {
     @Override
     public void handleNewIntent(ActivityClientRecord r, List<ReferrerIntent> intents) {
         originalHandler.handleNewIntent(r, intents);
+    }
+
+    // -----------------------------------------------------------------
+    // Android 16 handler surface. ClientTransactionHandler gained
+    // these abstract methods (and reshaped several record-based
+    // ones) after this proxy was written; without implementations
+    // the guest process dies with AbstractMethodError the first
+    // time the framework dispatches one — getPackageInfoNoCheck
+    // (1-arg) is called from ActivityClientRecord's constructor,
+    // i.e. on every single activity launch. All delegate to the
+    // wrapped handler; only handleLaunchActivity carries logic.
+    // -----------------------------------------------------------------
+
+    @Override
+    public LoadedApk getPackageInfoNoCheck(ApplicationInfo ai) {
+        return originalHandler.getPackageInfoNoCheck(ai);
+    }
+
+    @Override
+    public Activity handleLaunchActivity(ActivityClientRecord r, PendingTransactionActions pendingActions, int deviceId, Intent customIntent) {
+
+        Intent stubIntent = mirror.android.app.ActivityThread.ActivityClientRecord.intent.get(r);
+        StubActivityRecord saveInstance = new StubActivityRecord(stubIntent);
+        if (saveInstance.intent == null) {
+            Log.i(TAG, "save instance intent is null, return");
+            return null;
+        }
+        Intent intent = saveInstance.intent;
+        ComponentName caller = saveInstance.caller;
+        IBinder token = mirror.android.app.ActivityThread.ActivityClientRecord.token.get(r);
+        ActivityInfo info = saveInstance.info;
+        if (VClientImpl.get().getToken() == null) {
+            InstalledAppInfo installedAppInfo = VirtualCore.get().getInstalledAppInfo(info.packageName, 0);
+            if (installedAppInfo == null) {
+                Log.i(TAG, "install app info is null, return");
+                return null;
+            }
+            VActivityManager.get().processRestarted(info.packageName, info.processName, saveInstance.userId);
+            Log.i(TAG, "restart process, return");
+            return handleLaunchActivity(r, pendingActions, deviceId, customIntent);
+        }
+        if (!VClientImpl.get().isBound()) {
+            VClientImpl.get().bindApplicationForActivity(info.packageName, info.processName, intent);
+            Log.i(TAG, "rebound application, return");
+            return handleLaunchActivity(r, pendingActions, deviceId, customIntent);
+        }
+        int taskId = IActivityManager.getTaskForActivity.call(
+                ActivityManagerNative.getDefault.call(),
+                token,
+                false
+        );
+
+        mirror.android.app.ActivityThread.ActivityClientRecord.packageInfo.set(r, null);
+
+        VActivityManager.get().onActivityCreate(ComponentUtils.toComponentName(info), caller, token, info, intent, ComponentUtils.getTaskAffinity(info), taskId, info.launchMode, info.flags);
+        ClassLoader appClassLoader = VClientImpl.get().getClassLoader(info.applicationInfo);
+        intent.setExtrasClassLoader(appClassLoader);
+        mirror.android.app.ActivityThread.ActivityClientRecord.intent.set(r, intent);
+        mirror.android.app.ActivityThread.ActivityClientRecord.activityInfo.set(r, info);
+
+        return originalHandler.handleLaunchActivity(r, pendingActions, deviceId, customIntent);
+    }
+
+    @Override
+    public void handleStartActivity(ActivityClientRecord r, PendingTransactionActions pendingActions, ActivityOptions.SceneTransitionInfo sceneTransitionInfo) {
+        originalHandler.handleStartActivity(r, pendingActions, sceneTransitionInfo);
+    }
+
+    @Override
+    public void handleDestroyActivity(ActivityClientRecord r, boolean finishing, boolean getNonConfigInstance, String reason) {
+        originalHandler.handleDestroyActivity(r, finishing, getNonConfigInstance, reason);
+    }
+
+    @Override
+    public void handlePauseActivity(ActivityClientRecord r, boolean finished, boolean userLeaving, boolean autoEnteringPip, PendingTransactionActions pendingActions, String reason) {
+        originalHandler.handlePauseActivity(r, finished, userLeaving, autoEnteringPip, pendingActions, reason);
+    }
+
+    @Override
+    public void handleResumeActivity(ActivityClientRecord record, boolean finalStateRequest, boolean isForward, boolean shouldSendCompatFakeFocus, String reason) {
+        originalHandler.handleResumeActivity(record, finalStateRequest, isForward, shouldSendCompatFakeFocus, reason);
+    }
+
+    @Override
+    public void handleStopActivity(ActivityClientRecord r, PendingTransactionActions pendingActions, boolean finalStateRequest, String reason) {
+        originalHandler.handleStopActivity(r, pendingActions, finalStateRequest, reason);
+    }
+
+    @Override
+    public void reportRefresh(ActivityClientRecord r) {
+        originalHandler.reportRefresh(r);
+    }
+
+    @Override
+    public void handleActivityConfigurationChanged(ActivityClientRecord r, Configuration overrideConfig, int displayId, ActivityWindowInfo activityWindowInfo) {
+        originalHandler.handleActivityConfigurationChanged(r, overrideConfig, displayId, activityWindowInfo);
+    }
+
+    @Override
+    public void handleWindowContextInfoChanged(IBinder clientToken, WindowContextInfo info) {
+        originalHandler.handleWindowContextInfoChanged(clientToken, info);
+    }
+
+    @Override
+    public void handleWindowContextWindowRemoval(IBinder clientToken) {
+        originalHandler.handleWindowContextWindowRemoval(clientToken);
+    }
+
+    @Override
+    public void handlePictureInPictureStateChanged(ActivityClientRecord r, PictureInPictureUiState pipState) {
+        originalHandler.handlePictureInPictureStateChanged(r, pipState);
+    }
+
+    @Override
+    public void handleAttachSplashScreenView(ActivityClientRecord r, SplashScreenViewParcelable parcelable, SurfaceControl startingWindowLeash) {
+        originalHandler.handleAttachSplashScreenView(r, parcelable, startingWindowLeash);
+    }
+
+    @Override
+    public void handleConfigurationChanged(Configuration config, int deviceId) {
+        originalHandler.handleConfigurationChanged(config, deviceId);
+    }
+
+    @Override
+    public ActivityClientRecord prepareRelaunchActivity(IBinder token, List pendingResults, List pendingNewIntents, int configChanges, MergedConfiguration config, boolean preserveWindow, ActivityWindowInfo activityWindowInfo) {
+        return originalHandler.prepareRelaunchActivity(token, pendingResults, pendingNewIntents, configChanges, config, preserveWindow, activityWindowInfo);
+    }
+
+    @Override
+    public void reportRelaunch(ActivityClientRecord r) {
+        originalHandler.reportRelaunch(r);
     }
 
 }
