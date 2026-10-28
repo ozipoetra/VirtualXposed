@@ -76,17 +76,27 @@ static struct {
 } patchEnv;
 
 
-jint getCallingUid(alias_ref<jclass> clazz) {
+jint getCallingUid(JNIEnv *env, jclass clazz) {
+    // Installed by raw ArtMethod entry-point replacement
+    // (replaceGetCallingUid), so this function receives the
+    // true JNI calling convention: (JNIEnv*, jclass). It
+    // used to be declared fbjni-style with a single
+    // alias_ref<jclass> parameter — no wrapper exists on
+    // this path, so the JNIEnv* landed in the class slot
+    // and clazz.get() dereferenced it. That went unnoticed
+    // on 2018-era ART dispatch but segfaults on modern
+    // Android (device tombstone: fault at clazz load with a
+    // null register on the first binder transaction into a
+    // guest). Take the real parameters and use them.
     jint uid;
     if (patchEnv.is_art) {
-        uid = patchEnv.jni_orig_getCallingUid(Environment::ensureCurrentThreadIsAttached(),
-                                              clazz.get());
+        uid = patchEnv.jni_orig_getCallingUid(env, clazz);
     } else {
         uid = patchEnv.native_getCallingUid(patchEnv.IPCThreadState_self());
     }
-    uid = Environment::ensureCurrentThreadIsAttached()->CallStaticIntMethod(nativeEngineClass.get(),
-                                                                            patchEnv.method_onGetCallingUid,
-                                                                            uid);
+    uid = env->CallStaticIntMethod(nativeEngineClass.get(),
+                                   patchEnv.method_onGetCallingUid,
+                                   uid);
     return uid;
 }
 
