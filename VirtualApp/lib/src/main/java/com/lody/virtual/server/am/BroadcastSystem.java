@@ -138,13 +138,13 @@ public class BroadcastSystem {
             String componentAction = String.format("_VA_%s_%s", info.packageName, info.name);
             IntentFilter componentFilter = new IntentFilter(componentAction);
             BroadcastReceiver r = new StaticBroadcastReceiver(setting.appId, info, componentFilter);
-            mContext.registerReceiver(r, componentFilter, null, mScheduler);
+            registerReceiver(r, componentFilter);
             receivers.add(r);
             for (VPackage.ActivityIntentInfo ci : receiver.intents) {
                 IntentFilter cloneFilter = new IntentFilter(ci.filter);
                 SpecialComponentList.protectIntentFilter(cloneFilter);
                 r = new StaticBroadcastReceiver(setting.appId, info, cloneFilter);
-                mContext.registerReceiver(r, cloneFilter, null, mScheduler);
+                registerReceiver(r, cloneFilter);
                 receivers.add(r);
             }
         }
