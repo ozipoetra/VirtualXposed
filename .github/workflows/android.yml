@@ -39,10 +39,10 @@ jobs:
         with:
           cache-read-only: ${{ github.event_name == 'pull_request' }}
 
-      # Release signing for the aosp flavor. The build script
-      # reads keystore.* from VirtualApp/local.properties and only
-      # signs when the keystore file exists, so when the secrets
-      # aren't available (e.g. fork PRs) the build stays unsigned
+      # Release signing. The build script reads keystore.* from
+      # VirtualApp/local.properties and only signs when the
+      # keystore file exists, so when the secrets aren't
+      # available (e.g. fork PRs) the build stays unsigned
       # instead of failing.
       - name: Restore release signing key
         env:

@@ -48,12 +48,6 @@ android {
                 signingConfig = signingConfigs.config
             }
         }
-
-        fdroid {
-            dimension = 'main'
-            // No fdroid launcher variant exists; reuse aosp.
-            matchingFallbacks += ['aosp']
-        }
     }
     sourceSets {
         main {
