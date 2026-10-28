@@ -19,6 +19,7 @@ import com.lody.virtual.os.VUserHandle;
 
 import java.io.File;
 
+import mirror.android.content.pm.FrameworkPackageUserState;
 import mirror.android.content.pm.PackageParserJellyBean;
 import mirror.android.content.pm.PackageParserJellyBean17;
 import mirror.android.content.pm.PackageParserLollipop;
@@ -26,6 +27,7 @@ import mirror.android.content.pm.PackageParserLollipop22;
 import mirror.android.content.pm.PackageParserMarshmallow;
 import mirror.android.content.pm.PackageParserNougat;
 import mirror.android.content.pm.PackageParserP28;
+import mirror.android.content.pm.PackageParserU14;
 import mirror.android.content.pm.PackageUserState;
 
 import static android.os.Build.VERSION_CODES.JELLY_BEAN;
@@ -44,7 +46,36 @@ public class PackageParserCompat {
     public static final int[] GIDS = VirtualCore.get().getGids();
     private static final int API_LEVEL = Build.VERSION.SDK_INT;
     private static final int myUserId = VUserHandle.getUserId(Process.myUid());
-    private static final Object sUserState = API_LEVEL >= JELLY_BEAN_MR1 ? PackageUserState.ctor.newInstance() : null;
+    private static final Object sUserState = createUserState();
+
+    /**
+     * The default package-user state handed to the framework's
+     * generate*Info methods. Android 14 deleted
+     * android.content.pm.PackageUserState — the class this code
+     * used to instantiate — in favour of the
+     * android.content.pm.pkg.FrameworkPackageUserState interface
+     * and its DEFAULT singleton; the old mirror constructor
+     * lookup returned null, and the resulting NPE in <clinit>
+     * poisoned this class for the whole process
+     * (NoClassDefFoundError on every later use, seen on Android
+     * 16 as "Unable to parse the package" for APK installs).
+     * Resolve defensively so class init can never fail again.
+     */
+    private static Object createUserState() {
+        try {
+            if (API_LEVEL >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+                    && FrameworkPackageUserState.DEFAULT != null) {
+                return FrameworkPackageUserState.DEFAULT.get();
+            }
+            if (API_LEVEL >= JELLY_BEAN_MR1 && PackageUserState.ctor != null) {
+                return PackageUserState.ctor.newInstance();
+            }
+        } catch (Throwable ignored) {
+            // Fall through: an individual generate*Info call may
+            // still fail, but the class itself stays usable.
+        }
+        return null;
+    }
 
 
     public static PackageParser createParser(File packageFile) {
@@ -87,7 +118,9 @@ public class PackageParserCompat {
     }
 
     public static ServiceInfo generateServiceInfo(Service service, int flags) {
-        if (API_LEVEL >= M) {
+        if (API_LEVEL >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            return PackageParserU14.generateServiceInfo.call(service, flags, sUserState, myUserId);
+        } else if (API_LEVEL >= M) {
             return PackageParserMarshmallow.generateServiceInfo.call(service, flags, sUserState, myUserId);
         } else if (API_LEVEL >= LOLLIPOP_MR1) {
             return PackageParserLollipop22.generateServiceInfo.call(service, flags, sUserState, myUserId);
