@@ -19,6 +19,15 @@ public class ContentProviderCompat {
             return context.getContentResolver().call(uri, method, arg, extras);
         }
         ContentProviderClient client = crazyAcquireContentProvider(context, uri);
+        if (client == null) {
+            // The provider stayed unavailable through every
+            // retry (e.g. its host process failed to start).
+            // Callers already handle a null response — the
+            // service fetcher checks for one — so report the
+            // failure that way instead of dereferencing the
+            // null client and killing the whole process.
+            return null;
+        }
         Bundle res = null;
         try {
             res = client.call(method, arg, extras);

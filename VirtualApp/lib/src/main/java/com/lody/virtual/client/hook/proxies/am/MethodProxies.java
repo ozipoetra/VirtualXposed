@@ -303,7 +303,7 @@ class MethodProxies {
             String creator = (String) args[1];
             String[] resolvedTypes = (String[]) args[mResolvedTypesIndex];
             int type = (int) args[0];
-            int flags = (int) args[mFlagsIndex];
+            int flags = ((Number) args[mFlagsIndex]).intValue();
             if (args[5] instanceof Intent[]) {
                 Intent[] intents = (Intent[]) args[mIntentIndex];
                 for (int i = 0; i < intents.length; i++) {
@@ -692,7 +692,7 @@ class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             int maxNum = (int) args[0];
-            int flags = (int) args[1];
+            int flags = ((Number) args[1]).intValue();
             return VActivityManager.get().getServices(maxNum, flags).getList();
         }
 
@@ -738,7 +738,7 @@ class MethodProxies {
             if (args[4] instanceof Boolean) {
                 removeNotification = (boolean) args[4];
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && args[4] instanceof Integer) {
-                int flags = (int) args[4];
+                int flags = ((Number) args[4]).intValue();
                 removeNotification = (flags & Service.STOP_FOREGROUND_REMOVE) != 0;
             } else {
                 VLog.e(getClass().getSimpleName(), "Unknown flag : " + args[4]);
@@ -860,7 +860,7 @@ class MethodProxies {
             Intent service = (Intent) args[2];
             String resolvedType = (String) args[3];
             IServiceConnection conn = (IServiceConnection) args[4];
-            int flags = (int) args[5];
+            int flags = ((Number) args[5]).intValue();
             int userId = VUserHandle.myUserId();
             if (isServerProcess()) {
                 userId = service.getIntExtra("_VA_|_user_id_", VUserHandle.USER_NULL);
