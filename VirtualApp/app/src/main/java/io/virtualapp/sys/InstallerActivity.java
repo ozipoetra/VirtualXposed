@@ -281,7 +281,13 @@ public class InstallerActivity extends AppCompatActivity {
             int currentVersionCode;
 
             PackageInfo applicationInfo = installedAppInfo.getPackageInfo(0);
-            if (applicationInfo == null) {
+            if (applicationInfo == null || applicationInfo.applicationInfo == null) {
+                // applicationInfo is null when the package is
+                // registered in the container but not marked
+                // installed for this user — the state an install
+                // attempt that died midway leaves behind. The
+                // server legitimately returns a bare PackageInfo
+                // then; bail out instead of crashing on it.
                 finish();
                 return;
             }
