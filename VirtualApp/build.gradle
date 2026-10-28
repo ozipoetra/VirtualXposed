@@ -9,7 +9,9 @@ allprojects {
         // Several 2018-era dependencies (SwitchButton,
         // VersionCheckLib, AlipayZeroSdk, the me.weishu libraries,
         // …) were only ever published to JCenter. The read-only
-        // archive still serves them.
+        // archive still serves some of them; Aliyun's mirror of
+        // the same archive has the rest (incl. all of me.weishu).
+        maven { url 'https://maven.aliyun.com/repository/jcenter' }
         maven { url 'https://jcenter.bintray.com/' }
     }
 }
