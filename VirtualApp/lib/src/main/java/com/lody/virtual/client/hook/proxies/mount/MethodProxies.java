@@ -4,6 +4,7 @@ import android.os.Build;
 
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
+import com.lody.virtual.os.VUserHandle;
 
 import java.io.File;
 import java.lang.reflect.Method;
@@ -27,7 +28,23 @@ class MethodProxies {
                 return super.beforeCall(who, method, args);
             }
             if (args[0] instanceof Integer) {
-                args[0] = getRealUid();
+                // The first parameter is a raw userId, not a
+                // uid: since Android 13, StorageManager passes
+                // Context.getUserId() and StorageManagerService
+                // compares it directly against the caller's
+                // userId, demanding INTERACT_ACROSS_USERS on a
+                // mismatch. This hook used to rewrite the
+                // argument to the real UID (the Android 12
+                // semantics) — on Android 13+ the service reads
+                // that as "user 10365" and throws
+                // SecurityException, which killed every guest
+                // bind inside VClientImpl.setupVirtualStorage
+                // (Environment.getExternalStorageDirectory ->
+                // getVolumeList). Passing the real userId is
+                // also correct on Android 12, whose service
+                // derives the userId from the value
+                // (getUserId(0) == 0 for the primary user).
+                args[0] = VUserHandle.getUserId(getRealUid());
             }
             MethodParameterUtils.replaceFirstAppPkg(args);
             return super.beforeCall(who, method, args);
