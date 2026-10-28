@@ -126,6 +126,24 @@ public class BroadcastSystem {
         }
     }
 
+    /**
+     * Android 13+ refuses registerReceiver calls for
+     * non-system broadcasts that don't declare an export
+     * flag ("One of RECEIVER_EXPORTED or RECEIVER_NOT_EXPORTED
+     * should be specified..."), and app startup inside the
+     * container — startApp is on the install path — died with
+     * exactly that. These receivers exist to proxy broadcasts
+     * from any sender to virtual apps, which is the pre-13
+     * default behaviour: RECEIVER_EXPORTED.
+     */
+    private void registerReceiver(BroadcastReceiver receiver, IntentFilter filter) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            mContext.registerReceiver(receiver, filter, null, mScheduler, Context.RECEIVER_EXPORTED);
+        } else {
+            mContext.registerReceiver(receiver, filter, null, mScheduler);
+        }
+    }
+
     public void startApp(VPackage p) {
         PackageSetting setting = (PackageSetting) p.mExtras;
         for (VPackage.ActivityComponent receiver : p.receivers) {
