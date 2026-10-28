@@ -57,6 +57,8 @@ import java.util.Comparator;
 import java.util.List;
 
 import me.weishu.reflection.Reflection;
+
+import org.lsposed.hiddenapibypass.HiddenApiBypass;
 import mirror.android.app.ActivityThread;
 
 /**
@@ -184,7 +186,25 @@ public final class VirtualCore {
             if (Looper.myLooper() != Looper.getMainLooper()) {
                 throw new IllegalStateException("VirtualCore.startup() must called in main thread.");
             }
-            Reflection.unseal(context);
+            boolean unsealed = false;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                // free_reflection's unseal writes a helper dex into
+                // code_cache and loads it from the file; since
+                // Android 14 the runtime refuses to load writable
+                // dex files (SecurityException: "Writable dex file
+                // ... is not allowed"), which aborted startup in
+                // every process and left the engine running with no
+                // services registered. HiddenApiBypass sets the
+                // same exemption via an in-memory dex.
+                try {
+                    unsealed = HiddenApiBypass.setHiddenApiExemptions("L");
+                } catch (Throwable ignored) {
+                    // fall through to the legacy path
+                }
+            }
+            if (!unsealed) {
+                Reflection.unseal(context);
+            }
 
             VASettings.STUB_CP_AUTHORITY = context.getPackageName() + "." + VASettings.STUB_DEF_AUTHORITY;
             ServiceManagerNative.SERVICE_CP_AUTH = context.getPackageName() + "." + ServiceManagerNative.SERVICE_DEF_AUTH;

@@ -55,4 +55,9 @@ dependencies {
     implementation "me.weishu:free_reflection:3.0.1"
     implementation "me.weishu:epic:0.11.1"
     implementation "me.weishu.exposed:exposed-xposedapi:0.4.6"
+    // Modern hidden-API unsealing for Android 14+: free_reflection
+    // loads its helper dex from a writable file in code_cache,
+    // which the runtime now refuses (see VirtualCore.startup).
+    // HiddenApiBypass uses an in-memory dex instead.
+    implementation "org.lsposed.hiddenapibypass:hiddenapibypass:6.2"
 }
