@@ -18,6 +18,7 @@ import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.utils.EncodeUtils;
 import com.lody.virtual.helper.utils.FileUtils;
+import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
 
 import java.io.File;
@@ -324,6 +325,14 @@ public class InstallerActivity extends AppCompatActivity {
             VUiKit.defer().when(() -> {
                 return VirtualCore.get().installPackage(path, InstallStrategy.UPDATE_IF_EXIST);
             }).done((res) -> {
+                // VirtualCore.installPackage returns null when
+                // the call into the server fails outright (seen
+                // on the reinstall path) — the old code read
+                // res.isSuccess unconditionally and crashed the
+                // installer with an NPE. Treat null as a failure
+                // result so the user gets the fail message.
+                final InstallResult result = res != null ? res
+                        : InstallResult.makeFailure("Install service unavailable.");
                 // install success
                 mTips.setVisibility(View.GONE);
                 mProgressText.setVisibility(View.VISIBLE);
@@ -338,8 +347,8 @@ public class InstallerActivity extends AppCompatActivity {
                 });
                 mLeft.setVisibility(View.VISIBLE);
                 mLeft.setEnabled(true);
-                mLeft.setText(res.isSuccess ? getResources().getString(R.string.install_complete) :
-                        getResources().getString(R.string.install_fail, res.error));
+                mLeft.setText(result.isSuccess ? getResources().getString(R.string.install_complete) :
+                        getResources().getString(R.string.install_fail, result.error));
                 mLeft.setOnClickListener((vv) -> finish());
             }).fail((res) -> {
                 String msg = res.getMessage();
