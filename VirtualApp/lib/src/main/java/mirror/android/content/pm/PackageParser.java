@@ -20,6 +20,7 @@ import mirror.MethodParams;
 import mirror.MethodReflectParams;
 import mirror.RefClass;
 import mirror.RefConstructor;
+import mirror.RefInt;
 import mirror.RefMethod;
 import mirror.RefObject;
 import mirror.RefStaticMethod;
@@ -106,12 +107,23 @@ public class PackageParser {
 
         @MethodReflectParams("android.content.pm.PackageParser$SigningDetails")
         public static RefConstructor<android.content.pm.SigningInfo> ctor;
+
+        /**
+         * Android 14+: SigningInfo's constructor takes the
+         * top-level android.content.pm.SigningDetails instead
+         * of the parser's nested one, so the nested-param
+         * lookup above resolves to null there.
+         */
+        @MethodReflectParams("android.content.pm.SigningDetails")
+        public static RefConstructor<android.content.pm.SigningInfo> ctorModern;
     }
 
     public static class SigningDetails {
         public static Class<?> TYPE = RefClass.load(SigningDetails.class, "android.content.pm.PackageParser$SigningDetails");
         public static RefObject<Signature[]> signatures;
         public static RefObject<Signature[]> pastSigningCertificates;
+        public static RefInt signatureSchemeVersion;
+        public static RefObject<Object> publicKeys;
 
         public static RefMethod<Boolean> hasPastSigningCertificates;
         public static RefMethod<Boolean> hasSignatures;
