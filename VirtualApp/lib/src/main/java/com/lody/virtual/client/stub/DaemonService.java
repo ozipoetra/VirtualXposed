@@ -1,6 +1,8 @@
 package com.lody.virtual.client.stub;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -54,7 +56,7 @@ public class DaemonService extends Service {
 			return;
 		}
         startService(new Intent(this, InnerService.class));
-        startForeground(NOTIFY_ID, new Notification());
+        startForeground(NOTIFY_ID, buildNotification(this));
 	}
 
 	@Override
@@ -62,11 +64,40 @@ public class DaemonService extends Service {
 		return START_STICKY;
 	}
 
-	public static final class InnerService extends Service {
+	/**
+	 * A notification modern Android will actually accept for
+	 * startForeground: the bare {@code new Notification()} this
+	 * class used originally has no small icon and no channel,
+	 * and since Android 15 the system kills the process with
+	 * CannotPostForegroundServiceNotificationException
+	 * ("Bad notification for startForeground"). Use the app's
+	 * own icon and a low-importance channel.
+	 */
+	private static Notification buildNotification(Context context) {
+		Notification.Builder builder;
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			String channelId = "virtual_engine";
+			NotificationManager manager =
+					(NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+			if (manager != null && manager.getNotificationChannel(channelId) == null) {
+				manager.createNotificationChannel(new NotificationChannel(
+						channelId, "Virtual engine", NotificationManager.IMPORTANCE_LOW));
+			}
+			builder = new Notification.Builder(context, channelId);
+		} else {
+			builder = new Notification.Builder(context);
+		}
+		return builder
+				.setSmallIcon(context.getApplicationInfo().icon)
+				.setContentTitle(context.getApplicationInfo().loadLabel(context.getPackageManager()))
+				.setContentText("Virtual engine is running")
+				.build();
+	}
 
+	public static final class InnerService extends Service {
         @Override
         public int onStartCommand(Intent intent, int flags, int startId) {
-            startForeground(NOTIFY_ID, new Notification());
+            startForeground(NOTIFY_ID, buildNotification(this));
             stopForeground(true);
             stopSelf();
             return super.onStartCommand(intent, flags, startId);
