@@ -29,6 +29,12 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
+    buildFeatures {
+        // 57 .aidl interfaces under src/main/aidl are the core's
+        // client/server IPC surface; AGP 8+ compiles AIDL only
+        // when asked.
+        aidl = true
+    }
     lint {
         //IJobService need NewApi
         warning 'NewApi', 'OnClick'
