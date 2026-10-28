@@ -419,6 +419,20 @@ public final class VirtualCore {
     }
 
     public boolean isXposedEnabled() {
+        // The embedded Xposed bootstrap (me.weishu.exposed +
+        // the libepic native library) resolves Android 5-9-era
+        // ART internals in JNI_OnLoad and segfaults on modern
+        // ART — device tombstone: init_entries -> dlsym_ex
+        // null deref while binding de.robv.android.xposed.
+        // installer. Android 12+ is this fork's whole support
+        // window, so the bootstrap stays off there until the
+        // hooking core is replaced (an LSPlant-scale job);
+        // guests otherwise never survive a bind. The
+        // .disable_xposed file flag below remains the manual
+        // opt-out on older hosts.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            return false;
+        }
         return !VirtualCore.get().getContext().getFileStreamPath(".disable_xposed").exists();
     }
 
