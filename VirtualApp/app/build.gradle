@@ -26,7 +26,7 @@ android {
 
     defaultConfig {
         applicationId = "io.va.exposed64"
-        minSdk = 21
+        minSdk = 31
         // Android 17 (API 37); the same build covers Android 16
         // (API 36) behavior changes, which are a subset.
         targetSdk = 37

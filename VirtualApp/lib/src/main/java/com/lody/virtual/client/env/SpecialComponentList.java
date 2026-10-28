@@ -11,7 +11,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -127,32 +126,14 @@ public final class SpecialComponentList {
 
     public static void protectIntentFilter(IntentFilter filter) {
         if (filter != null) {
+            // Android 12+ only (minSdk 31): the actions live in
+            // an ArraySet. (Pre-12 they were an ArrayList and a
+            // List cast worked; the ArraySet cast threw
+            // ClassCastException out of installPackage.) Sets
+            // have no iterator set(), so rewrite by remove +
+            // add over a snapshot copy.
             Object rawActions = mirror.android.content.IntentFilter.mActions.get(filter);
-            if (rawActions instanceof List) {
-                // Up to Android 11 the actions live in an ArrayList.
-                List<String> actions = (List<String>) rawActions;
-                ListIterator<String> iterator = actions.listIterator();
-                while (iterator.hasNext()) {
-                    String action = iterator.next();
-                    if (SpecialComponentList.isActionInBlackList(action)) {
-                        iterator.remove();
-                        continue;
-                    }
-                    if (SYSTEM_BROADCAST_ACTION.contains(action)) {
-                        continue;
-                    }
-                    String newAction = SpecialComponentList.protectAction(action);
-                    if (newAction != null) {
-                        iterator.set(newAction);
-                    }
-                }
-            } else if (rawActions instanceof Collection) {
-                // Android 12+: the actions live in an ArraySet.
-                // The old code cast the field to List and threw
-                // ClassCastException, which escaped
-                // BroadcastSystem.startApp and failed the whole
-                // installPackage call. Sets have no iterator
-                // set(), so rewrite by remove + add over a copy.
+            if (rawActions instanceof Collection) {
                 Collection<String> actions = (Collection<String>) rawActions;
                 for (String action : new ArrayList<>(actions)) {
                     if (SpecialComponentList.isActionInBlackList(action)) {
