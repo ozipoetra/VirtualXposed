@@ -7,6 +7,7 @@ import android.content.IntentFilter;
 import android.os.Build;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -126,20 +127,46 @@ public final class SpecialComponentList {
 
     public static void protectIntentFilter(IntentFilter filter) {
         if (filter != null) {
-            List<String> actions = mirror.android.content.IntentFilter.mActions.get(filter);
-            ListIterator<String> iterator = actions.listIterator();
-            while (iterator.hasNext()) {
-                String action = iterator.next();
-                if (SpecialComponentList.isActionInBlackList(action)) {
-                    iterator.remove();
-                    continue;
+            Object rawActions = mirror.android.content.IntentFilter.mActions.get(filter);
+            if (rawActions instanceof List) {
+                // Up to Android 11 the actions live in an ArrayList.
+                List<String> actions = (List<String>) rawActions;
+                ListIterator<String> iterator = actions.listIterator();
+                while (iterator.hasNext()) {
+                    String action = iterator.next();
+                    if (SpecialComponentList.isActionInBlackList(action)) {
+                        iterator.remove();
+                        continue;
+                    }
+                    if (SYSTEM_BROADCAST_ACTION.contains(action)) {
+                        continue;
+                    }
+                    String newAction = SpecialComponentList.protectAction(action);
+                    if (newAction != null) {
+                        iterator.set(newAction);
+                    }
                 }
-                if (SYSTEM_BROADCAST_ACTION.contains(action)) {
-                    continue;
-                }
-                String newAction = SpecialComponentList.protectAction(action);
-                if (newAction != null) {
-                    iterator.set(newAction);
+            } else if (rawActions instanceof Collection) {
+                // Android 12+: the actions live in an ArraySet.
+                // The old code cast the field to List and threw
+                // ClassCastException, which escaped
+                // BroadcastSystem.startApp and failed the whole
+                // installPackage call. Sets have no iterator
+                // set(), so rewrite by remove + add over a copy.
+                Collection<String> actions = (Collection<String>) rawActions;
+                for (String action : new ArrayList<>(actions)) {
+                    if (SpecialComponentList.isActionInBlackList(action)) {
+                        actions.remove(action);
+                        continue;
+                    }
+                    if (SYSTEM_BROADCAST_ACTION.contains(action)) {
+                        continue;
+                    }
+                    String newAction = SpecialComponentList.protectAction(action);
+                    if (newAction != null) {
+                        actions.remove(action);
+                        actions.add(newAction);
+                    }
                 }
             }
         }
