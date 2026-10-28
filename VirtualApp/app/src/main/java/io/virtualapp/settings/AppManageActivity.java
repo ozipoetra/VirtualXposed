@@ -154,16 +154,15 @@ public class AppManageActivity extends VActivity {
         }
 
         popupMenu.setOnMenuItemClickListener(item -> {
-            switch (item.getItemId()) {
-                case R.id.action_uninstall:
-                    showUninstallDialog(appManageInfo, appManageInfo.getName());
-                    break;
-                case R.id.action_repair:
-                    showRepairDialog(appManageInfo);
-                    break;
-                case R.id.action_redirect:
-                    showStorageRedirectDialog(appManageInfo);
-                    break;
+            // R.id fields are no longer compile-time constants
+            // (AGP 8+), so this can't be a switch any more.
+            int itemId = item.getItemId();
+            if (itemId == R.id.action_uninstall) {
+                showUninstallDialog(appManageInfo, appManageInfo.getName());
+            } else if (itemId == R.id.action_repair) {
+                showRepairDialog(appManageInfo);
+            } else if (itemId == R.id.action_redirect) {
+                showStorageRedirectDialog(appManageInfo);
             }
             return false;
         });

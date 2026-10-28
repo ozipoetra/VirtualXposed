@@ -56,7 +56,7 @@ public class OnlinePlugin {
             return;
         }
 
-        AlertDialog failDialog = new AlertDialog.Builder(context, R.style.Theme_AppCompat_DayNight_Dialog_Alert)
+        AlertDialog failDialog = new AlertDialog.Builder(context, android.support.v7.appcompat.R.style.Theme_AppCompat_DayNight_Dialog_Alert)
                 .setTitle(android.R.string.dialog_alert_title)
                 .setMessage(tips)
                 .setPositiveButton(android.R.string.ok, ((dialog1, which1) -> {

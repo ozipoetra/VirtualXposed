@@ -21,7 +21,7 @@ public class Misc {
         final String alipay = context.getResources().getString(R.string.donate_alipay);
         final String[] items = {alipay, "PayPal", "Bitcoin"};
 
-        AlertDialog chooseDialog = new AlertDialog.Builder(context, R.style.Theme_AppCompat_DayNight_Dialog_Alert)
+        AlertDialog chooseDialog = new AlertDialog.Builder(context, android.support.v7.appcompat.R.style.Theme_AppCompat_DayNight_Dialog_Alert)
                 .setTitle(R.string.donate_choose_title)
                 .setItems(items, (dialog1, which1) -> {
                     dialog1.dismiss();

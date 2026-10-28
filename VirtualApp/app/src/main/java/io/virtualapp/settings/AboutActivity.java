@@ -159,7 +159,7 @@ public class AboutActivity extends VActivity {
         Element thanks = new Element();
         thanks.setTitle(getResources().getString(R.string.about_thanks));
         thanks.setOnClickListener(v -> {
-            AlertDialog alertDialog = new AlertDialog.Builder(this, R.style.Theme_AppCompat_DayNight_Dialog_Alert)
+            AlertDialog alertDialog = new AlertDialog.Builder(this, android.support.v7.appcompat.R.style.Theme_AppCompat_DayNight_Dialog_Alert)
                     .setTitle(R.string.thanks_dialog_title)
                     .setMessage(R.string.thanks_dialog_content)
                     .setPositiveButton(R.string.about_icon_yes, null)

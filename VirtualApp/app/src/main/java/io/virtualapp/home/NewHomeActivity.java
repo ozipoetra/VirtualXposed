@@ -244,7 +244,7 @@ public class NewHomeActivity extends NexusLauncherActivity {
             return;
         }
         AlertDialog alertDialog = new AlertDialog.Builder(getContext())
-                .setTitle(R.string.about_donate)
+                .setTitle(com.android.launcher3.R.string.about_donate)
                 .setMessage(R.string.donate_dialog_content)
                 .setPositiveButton(android.R.string.yes, (dialog, which) -> {
                     Misc.showDonate(this);

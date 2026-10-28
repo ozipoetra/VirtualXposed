@@ -178,7 +178,7 @@ public class LoadingActivity extends VActivity {
                     // tell user that this app need that permission
                     Log.i(TAG, "request permission: " + dangerousPermissions);
 
-                    AlertDialog alertDialog = new AlertDialog.Builder(this, R.style.Theme_AppCompat_DayNight_Dialog_Alert)
+                    AlertDialog alertDialog = new AlertDialog.Builder(this, android.support.v7.appcompat.R.style.Theme_AppCompat_DayNight_Dialog_Alert)
                             .setTitle(R.string.permission_tip_title)
                             .setMessage(getResources().getString(R.string.permission_tips_content, name))
                             .setPositiveButton(R.string.permission_tips_confirm, (dialog, which) -> {
@@ -252,7 +252,7 @@ public class LoadingActivity extends VActivity {
                 final String tag = "permission_tips_" + appModel.packageName.replaceAll("\\.", "_");
                 // TODO find a device figuring out why some permissions are not detected.
                 if (!Once.beenDone(tag)) {
-                    AlertDialog alertDialog = new AlertDialog.Builder(this, R.style.Theme_AppCompat_DayNight_Dialog_Alert)
+                    AlertDialog alertDialog = new AlertDialog.Builder(this, android.support.v7.appcompat.R.style.Theme_AppCompat_DayNight_Dialog_Alert)
                             .setTitle(android.R.string.dialog_alert_title)
                             .setMessage(getResources().getString(R.string.permission_denied_tips_content, appModel.name))
                             .setPositiveButton(R.string.permission_tips_confirm, (dialog, which) -> {

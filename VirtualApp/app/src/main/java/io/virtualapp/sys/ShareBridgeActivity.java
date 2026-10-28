@@ -109,7 +109,7 @@ public class ShareBridgeActivity extends AppCompatActivity {
             try {
                 holder.label.setText(item.loadLabel(packageManager));
             } catch (Throwable e) {
-                holder.label.setText(R.string.package_state_unknown);
+                holder.label.setText(com.android.launcher3.R.string.package_state_unknown);
             }
             try {
                 holder.icon.setImageDrawable(item.loadIcon(packageManager));
